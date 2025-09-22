@@ -1,0 +1,14 @@
+{
+    "labels": ["University", "System"],
+    "priority": "normal",
+    "suggestedFolder": "University",
+    "summary": "Zmena miestnosti v rozvrhu predmetu Typ.2 (Typológia II) pre akad. rok 2025/2026, semester ZIMNY.",
+    "reasons": [
+      "Notification of room change for a course schedule",
+      "Sender is university scheduling system (mais@tuke.sk)",
+      "Informational update without immediate deadline"
+    ],
+    "confidence": 0.95,
+    "notify": false
+  }
+  

@@ -1,0 +1,11 @@
+{
+    "from": "john.doe@example.com",
+    "to": "user@example.edu",
+    "subject": "Dinner this weekend?",
+    "bodyPreview": "Hey, are you free on Saturday evening? Let’s grab some dinner and catch up.",
+    "contentType": "html",
+    "text": "Hey, are you free on Saturday evening? Let’s grab some dinner and catch up.",
+    "receivedDateTime": "2025-09-22T11:37:49Z",
+    "webLink": "https://outlook.office365.com/owa/"
+  }
+  

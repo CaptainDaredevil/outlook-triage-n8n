@@ -1,0 +1,807 @@
+{
+  "name": "Outlook filter (vikt)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "output": "raw",
+        "filters": {
+          "foldersToInclude": [
+            "${OUTLOOK_INBOX_FOLDER_ID}"
+          ],
+          "readStatus": "both"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlookTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1728,
+        368
+      ],
+      "id": "${GUID}",
+      "name": "Microsoft Outlook Trigger",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "${OUTLOOK_CREDENTIAL_ID}",
+          "name": "Outlook (demo)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function decodeEntities(s='') {\n  return s\n    .replace(/&nbsp;/gi, ' ')\n    .replace(/&amp;/gi, '&')\n    .replace(/&lt;/gi, '<')\n    .replace(/&gt;/gi, '>')\n    .replace(/&quot;/gi, '\"')\n    .replace(/&#39;/gi, \"'\");\n}\n\nreturn items.map(item => {\n  const body = item.json?.body || {};\n  const raw = body.content || '';\n\n  // 1) HTML -> text\n  const plain = decodeEntities(\n    raw\n      .replace(/<style[\\s\\S]*?<\\/style>/gi,' ')\n      .replace(/<script[\\s\\S]*?<\\/script>/gi,' ')\n      .replace(/<!--[\\s\\S]*?-->/g,' ')\n      .replace(/<[^>]+>/g,' ')\n  )\n  .replace(/\\s+/g,' ')\n  .trim();\n\n  // 2) Удаляем типичные «подвалы» (unsubscribe, адреса рассылки)\n  const cleaned = plain\n    .replace(/(odhlásenie|unsubscribe|если не хотите|не хочeте отримувати)[\\s\\S]*$/i, '')\n    .trim();\n\n  // 3) Фолбэк, если письмо пустое\n  const fallback = item.json.bodyPreview || item.json.subject || '';\n  item.json._plainBody = (cleaned || fallback).slice(0, 5000);\n\n  // 4) Метаданные\n  item.json._meta = {\n    id: item.json.id,\n    subject: item.json.subject || '',\n    from: item.json.from?.emailAddress?.address\n          || item.json.sender?.emailAddress?.address\n          || '',\n    to: (item.json.toRecipients || []).map(r => r.emailAddress.address).join(', '),\n    received: item.json.receivedDateTime || '',\n    hasAttachments: !!item.json.hasAttachments,\n    webLink: item.json.webLink || ''\n  };\n\n  return item;\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        368
+      ],
+      "id": "${GUID}",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an email classifier. \nReturn ONLY valid minified JSON. No prose.\n\n## Task\nClassify the email into topical categories, assign independent priority, suggest a folder, and set notify flag.\n\n## Inputs\nSubject: {{ $json[\"_meta\"][\"subject\"] }}\nFrom: {{ $json[\"_meta\"][\"from\"] }}\nBody: {{ $json[\"_plainBody\"] }}\n\n## Categories (multi-label)\nUniversity, System, Promotions, Personal, Other\n\n## Priority rules\n- \"critical\": urgent ≤24h, client order, university official with deadline, financial transaction/failure, security/OTP.\n- \"high\": important but not critical (e.g. deadlines for exams, contracts, invoices).\n- \"normal\": can wait.\n- \"low\": junk, promo, newsletters, marketing.\n⚠ Marketing/promotional emails remain \"low\" even if they mention expiry dates or renewal prompts.\n\n## Folder\nMap main label → University, System, Personal, Promotions, Other.\n\n## Notify\ntrue if priority=\"critical\" OR (priority=\"high\" AND any of Client, University, Finance, System present).  \nElse false.\n\n## Output JSON\n{\n  \"labels\": string[],\n  \"priority\": \"critical\"|\"high\"|\"normal\"|\"low\",\n  \"suggestedFolder\": string,\n  \"summary\": string,\n  \"reasons\": string[],\n  \"confidence\": number,\n  \"notify\": boolean\n}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -1344,
+        368
+      ],
+      "id": "${GUID}",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {
+          "maxTokens": 1024,
+          "responseFormat": "json_object",
+          "maxRetries": 2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1376,
+        544
+      ],
+      "id": "${GUID}",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "${OPENAI_CREDENTIAL_ID}",
+          "name": "OpenAI (demo)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.priority || $json.output.priority }}",
+                    "rightValue": "low",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "${GUID}"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "low"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "${GUID}",
+                    "leftValue": "={{ $json.priority || $json.output.priority }}",
+                    "rightValue": "normal",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "normal"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "${GUID}",
+                    "leftValue": "={{ $json.priority || $json.output.priority }}",
+                    "rightValue": "high",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "high"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "${GUID}",
+                    "leftValue": "={{ $json.priority || $json.output.priority }}",
+                    "rightValue": "critical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "critical"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "${GUID}",
+                    "leftValue": "=",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1040,
+        96
+      ],
+      "id": "${GUID}",
+      "name": "Switch (low-critical)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        -32
+      ],
+      "id": "${GUID}",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "chatId": "${TELEGRAM_CHAT_ID}",
+        "text": "=📧 *New Email Received*\n\n👤 *From:* {{$node[\"Microsoft Outlook Trigger\"].json.from.emailAddress.address}}\n📥 *To:* {{$node[\"Microsoft Outlook Trigger\"].json.toRecipients[0].emailAddress.address}}\n📝 *Subject:* {{$node[\"Microsoft Outlook Trigger\"].json.subject}}\n\n🏷️ *Category:* {{$json.output.labels[0]}} ({{Math.round($json.output.confidence*100)}}% sure)\n⚡ *Priority:* {{$json.output.priority}}\n📂 *Suggested Folder:* {{$json.output.suggestedFolder}}\n\n📖 *Summary:*  \n{{$json.output.summary}}\n\n💡 *Why important:*  \n• {{$json.output.reasons[0]}}  \n• {{$json.output.reasons[1]}}  \n• {{$json.output.reasons[2]}}\n\n🔗 [Open email]({{$node[\"Microsoft Outlook Trigger\"].json.webLink}})",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        128
+      ],
+      "id": "${GUID}",
+      "name": "Need to read",
+      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "credentials": {
+        "telegramApi": {
+          "id": "${TELEGRAM_CREDENTIAL_ID}",
+          "name": "Telegram (demo)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "${TELEGRAM_CHAT_ID}",
+        "text": "The agent did not recognize the letter. We need to figure it out.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        320
+      ],
+      "id": "${GUID}",
+      "name": "AI slop",
+      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "credentials": {
+        "telegramApi": {
+          "id": "${TELEGRAM_CREDENTIAL_ID}",
+          "name": "Telegram (demo)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "${GUID}",
+                    "leftValue": "={{ $json.output.suggestedFolder }}",
+                    "rightValue": "Personal",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Personal"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "${GUID}",
+                    "leftValue": "={{ $json.output.suggestedFolder }}",
+                    "rightValue": "Promotions",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Promotions"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "${GUID}",
+                    "leftValue": "={{ $json.output.suggestedFolder }}",
+                    "rightValue": "System",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "System"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "${GUID}",
+                    "leftValue": "={{ $json.output.suggestedFolder }}",
+                    "rightValue": "University",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "University"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "${GUID}",
+                    "leftValue": "={{ $json.output.suggestedFolder }}",
+                    "rightValue": "Other",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Other"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1200,
+        736
+      ],
+      "id": "${GUID}",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "messageId": {
+          "__rl": true,
+          "value": "={{ $('Microsoft Outlook Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "${OUTLOOK_FOLDER_PERSONAL}",
+          "mode": "list",
+          "cachedResultName": "Personal",
+          "cachedResultUrl": "https://example.com/..."
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        480
+      ],
+      "id": "${GUID}",
+      "name": "Move a Personal message",
+      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "${OUTLOOK_CREDENTIAL_ID}",
+          "name": "Outlook (demo)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "messageId": {
+          "__rl": true,
+          "value": "={{ $('Microsoft Outlook Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "${OUTLOOK_FOLDER_SYSTEM}",
+          "mode": "list",
+          "cachedResultName": "System",
+          "cachedResultUrl": "https://example.com/..."
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        752
+      ],
+      "id": "${GUID}",
+      "name": "Move a System message",
+      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "${OUTLOOK_CREDENTIAL_ID}",
+          "name": "Outlook (demo)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "messageId": {
+          "__rl": true,
+          "value": "={{ $('Microsoft Outlook Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "${OUTLOOK_FOLDER_UNIVERSITY}",
+          "mode": "list",
+          "cachedResultName": "University",
+          "cachedResultUrl": "https://example.com/..."
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -752,
+        864
+      ],
+      "id": "${GUID}",
+      "name": "Move a University message",
+      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "${OUTLOOK_CREDENTIAL_ID}",
+          "name": "Outlook (demo)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "messageId": {
+          "__rl": true,
+          "value": "={{ $('Microsoft Outlook Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "${OUTLOOK_FOLDER_OTHER}",
+          "mode": "list",
+          "cachedResultName": "Other",
+          "cachedResultUrl": "https://example.com/..."
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        1024
+      ],
+      "id": "${GUID}",
+      "name": "Move an Other message",
+      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "${OUTLOOK_CREDENTIAL_ID}",
+          "name": "Outlook (demo)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "messageId": {
+          "__rl": true,
+          "value": "={{ $('Microsoft Outlook Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "${OUTLOOK_FOLDER_FALLBACK}",
+          "mode": "list",
+          "cachedResultName": "Fallback",
+          "cachedResultUrl": "https://example.com/..."
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -1008,
+        1104
+      ],
+      "id": "${GUID}",
+      "name": "Move a Fallback",
+      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "${OUTLOOK_CREDENTIAL_ID}",
+          "name": "Outlook (demo)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"required\": [\"labels\",\"priority\",\"suggestedFolder\",\"summary\",\"reasons\",\"confidence\",\"notify\"],\n  \"properties\": {\n    \"labels\": {\n      \"type\": \"array\",\n      \"items\": { \"type\": \"string\", \"enum\": [\"University\",\"System\",\"Promotions\",\"Personal\",\"Other\"] },\n      \"minItems\": 1,\n      \"maxItems\": 3\n    },\n    \"priority\": { \"type\": \"string\", \"enum\": [\"critical\",\"high\",\"normal\",\"low\"] },\n    \"suggestedFolder\": { \"type\": \"string\", \"enum\": [\"Clients\",\"University\",\"Finance\",\"System\",\"HR\",\"Logistics\",\"Legal\",\"Personal\",\"Promotions\",\"Other\"] },\n    \"summary\": { \"type\": \"string\", \"maxLength\": 240 },\n    \"reasons\": { \"type\": \"array\", \"items\": { \"type\": \"string\" }, \"minItems\": 1, \"maxItems\": 5 },\n    \"confidence\": { \"type\": \"number\", \"minimum\": 0, \"maximum\": 1 },\n    \"notify\": { \"type\": \"boolean\" }\n  },\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1136,
+        544
+      ],
+      "id": "${GUID}",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "messageId": {
+          "__rl": true,
+          "value": "={{ $('Microsoft Outlook Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "${OUTLOOK_FOLDER_PROMOTIONS}",
+          "mode": "list",
+          "cachedResultName": "Promotions",
+          "cachedResultUrl": "https://example.com/..."
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        608
+      ],
+      "id": "${GUID}",
+      "name": "Move a Promotions message",
+      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "${OUTLOOK_CREDENTIAL_ID}",
+          "name": "Outlook (demo)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Microsoft Outlook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Switch (low-critical)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch (low-critical)": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Need to read",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Need to read",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "AI slop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Move a Personal message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Move a Promotions message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Move a System message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Move a University message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Move an Other message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Move a Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "${WORKFLOW_VERSION_ID}",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "${N8N_INSTANCE_ID}"
+  },
+  "id": "aHXcIZ5S0j2jHNgg",
+  "tags": []
+}

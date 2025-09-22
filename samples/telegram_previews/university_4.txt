@@ -1,0 +1,19 @@
+📧 New Email Received
+
+👤 From: sender@example.com
+📥 To: user@example.edu
+📝 Subject: Reminder: Assignment Deadline
+
+🏷️ Category: University (90% sure)
+⚡ Priority: critical
+📂 Suggested Folder: University
+
+📖 Summary:
+Reminder to submit lab report by Friday 5 PM; late submissions will not be accepted.
+
+💡 Why important:
+• Assignment deadline directed to students
+• Explicit submission cutoff and no-late-submissions policy
+• Relevant to university coursework/official communication
+
+🔗 Open email (https://outlook.office365.com/owa/)

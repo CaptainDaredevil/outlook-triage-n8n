@@ -1,0 +1,14 @@
+{
+    "labels": ["University"],
+    "priority": "critical",
+    "suggestedFolder": "University",
+    "summary": "Reminder to submit lab report by Friday 5 PM; late submissions will not be accepted.",
+    "reasons": [
+      "Assignment deadline directed to students",
+      "Explicit submission cutoff and no-late-submissions policy",
+      "Relevant to university coursework/official communication"
+    ],
+    "confidence": 0.9,
+    "notify": true
+  }
+  

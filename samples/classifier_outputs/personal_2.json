@@ -1,0 +1,14 @@
+{
+    "labels": ["Personal"],
+    "priority": "normal",
+    "suggestedFolder": "Personal",
+    "summary": "Personal invitation to meet for dinner Saturday evening; casual catch-up request from a personal Gmail address.",
+    "reasons": [
+      "Casual social language and explicit invitation to meet in person",
+      "Sender uses a personal Gmail account (not organizational/system/university)",
+      "No urgent deadlines, transactions, or promotional content present"
+    ],
+    "confidence": 0.98,
+    "notify": false
+  }
+  

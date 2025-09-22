@@ -1,0 +1,11 @@
+{
+    "from": "no-reply@university.example",
+    "to": "user@example.edu",
+    "subject": "MAIS - Zmena rozvrhu predmetu Typ.2, P.",
+    "bodyPreview": "V rozvrhu predmetu bola zmenená miestnosť...",
+    "contentType": "text",
+    "text": "V rozvrhu predmetu bola zmenená miestnosť. V akad. roku 2025/2026, ZIMNY, upravená RJ: Typ.2 - Typológia II.",
+    "receivedDateTime": "2025-09-22T11:45:23Z",
+    "webLink": "https://outlook.office365.com/owa/"
+  }
+  
