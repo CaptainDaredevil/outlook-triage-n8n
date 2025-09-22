@@ -1,0 +1,19 @@
+# Secrets
+.env
+*.env
+
+# n8n local data
+.n8n/
+n8n_data/
+*.sqlite
+*.db
+backups/
+
+# Exports / scratch
+export_*.json
+*.log
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode/
