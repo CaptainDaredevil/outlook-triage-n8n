@@ -10,12 +10,12 @@ From: {{ $json["_meta"]["from"] }}
 Body: {{ $json["_plainBody"] }}
 
 ## Categories (multi-label)
-System, Promotion, Personal, Clients, Finance, HR, Legal, Logistics, Other
+University, System, Promotions, Personal, Other
 
 ## Priority rules
-- "critical": urgent ≤24h, client order, financial transaction/failure, security alert requiring **immediate action**  
+- "critical": urgent ≤24h, university official with deadline, financial transaction/failure, security alert requiring **immediate action**  
   (e.g. account locked, fraudulent charge, forced password reset, payment failure, service suspension).
-- "high": important but not critical (e.g. contracts, invoices, near-term meeting invites/updates).
+- "high": important but not critical (e.g. deadlines for exams, contracts, invoices, near-term meeting invites/updates).
 - "normal":  
   - routine security notifications (e.g. "new sign-in detected", "unfamiliar device", "login attempt"),  
   - one-time verification codes (OTP, 2FA, login codes, sudo codes, email verification codes),  
@@ -24,10 +24,10 @@ System, Promotion, Personal, Clients, Finance, HR, Legal, Logistics, Other
 ⚠ Marketing/promotional emails remain "low" even if they mention expiry dates or renewal prompts.
 
 ## Folder
-Map main label → Clients, Finance, System, HR, Logistics, Legal, Personal, Promotions, Other.
+Map main label → University, System, Personal, Promotions, Other.
 
 ## Notify
-true if priority="critical" OR (priority="high" AND any of Client, Finance, System present).  
+true if priority="critical" OR (priority="high" AND any of University, System present).  
 Else false.
 
 ## Output JSON
