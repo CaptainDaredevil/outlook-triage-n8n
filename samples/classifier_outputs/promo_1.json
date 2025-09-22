@@ -1,0 +1,14 @@
+{
+    "labels": ["Promotions"],
+    "priority": "low",
+    "suggestedFolder": "Promotions",
+    "summary": "Promotional email advertising 20% off electronics; marketing content and limited-time offer.",
+    "reasons": [
+      "Subject and body advertise a discount and deals",
+      "Content is clearly marketing/promotional (offer/newsletter)",
+      "Sender is a generic Gmail address, not an institutional contact"
+    ],
+    "confidence": 0.95,
+    "notify": false
+  }
+  
