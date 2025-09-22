@@ -1,0 +1,11 @@
+{
+    "from": "newsletter@example.com",
+    "to": "user@example.edu",
+    "subject": "Special Offer - 20% Off Electronics!",
+    "bodyPreview": "Save 20% on selected electronics this week only. Don’t miss out on these amazing deals!",
+    "contentType": "html",
+    "text": "Save 20% on selected electronics this week only. Don’t miss out on these amazing deals!",
+    "receivedDateTime": "2025-09-22T11:17:28Z",
+    "webLink": "https://outlook.office365.com/owa/"
+  }
+  
