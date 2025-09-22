@@ -1,0 +1,11 @@
+{
+    "from": "no-reply@university.example",
+    "to": "user@example.edu",
+    "subject": "Reminder: Assignment Deadline",
+    "bodyPreview": "Dear students, please remember to submit your lab report by Friday 5 PM...",
+    "contentType": "html",
+    "text": "Dear students, please remember to submit your lab report by Friday 5 PM. Late submissions will not be accepted.",
+    "receivedDateTime": "2025-09-22T11:17:08Z",
+    "webLink": "https://outlook.office365.com/owa/"
+  }
+  
