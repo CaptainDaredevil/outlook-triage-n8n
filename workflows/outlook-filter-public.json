@@ -1,5 +1,5 @@
 {
-  "name": "Outlook filter (vikt)",
+  "name": "Outlook filter REDACTED",
   "nodes": [
     {
       "parameters": {
@@ -13,7 +13,7 @@
         "output": "raw",
         "filters": {
           "foldersToInclude": [
-            "${OUTLOOK_INBOX_FOLDER_ID}"
+            "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwAAAgEMAAAA"
           ],
           "readStatus": "both"
         },
@@ -25,18 +25,18 @@
         -1728,
         368
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Microsoft Outlook Trigger",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "${OUTLOOK_CREDENTIAL_ID}",
-          "name": "Outlook (demo)"
+          "id": "REDACTED",
+          "name": "Outlook REDACTED"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "function decodeEntities(s='') {\n  return s\n    .replace(/&nbsp;/gi, ' ')\n    .replace(/&amp;/gi, '&')\n    .replace(/&lt;/gi, '<')\n    .replace(/&gt;/gi, '>')\n    .replace(/&quot;/gi, '\"')\n    .replace(/&#39;/gi, \"'\");\n}\n\nreturn items.map(item => {\n  const body = item.json?.body || {};\n  const raw = body.content || '';\n\n  // 1) HTML -> text\n  const plain = decodeEntities(\n    raw\n      .replace(/<style[\\s\\S]*?<\\/style>/gi,' ')\n      .replace(/<script[\\s\\S]*?<\\/script>/gi,' ')\n      .replace(/<!--[\\s\\S]*?-->/g,' ')\n      .replace(/<[^>]+>/g,' ')\n  )\n  .replace(/\\s+/g,' ')\n  .trim();\n\n  const cleaned = plain\n    .replace(/(odhlásenie|unsubscribe|если не хотите|не хочeте отримувати)[\\s\\S]*$/i, '')\n    .trim();\n\n  const fallback = item.json.bodyPreview || item.json.subject || '';\n  item.json._plainBody = (cleaned || fallback).slice(0, 5000);\n\n  item.json._meta = {\n    id: item.json.id,\n    subject: item.json.subject || '',\n    from: item.json.from?.emailAddress?.address\n          || item.json.sender?.emailAddress?.address\n          || '',\n    to: (item.json.toRecipients || []).map(r => r.emailAddress.address).join(', '),\n    received: item.json.receivedDateTime || '',\n    hasAttachments: !!item.json.hasAttachments,\n    webLink: item.json.webLink || ''\n  };\n\n  return item;\n});"
+        "jsCode": "function decodeEntities(s='') {\n  return s\n    .replace(/&nbsp;/gi, ' ')\n    .replace(/&amp;/gi, '&')\n    .replace(/&lt;/gi, '<')\n    .replace(/&gt;/gi, '>')\n    .replace(/&quot;/gi, '\"')\n    .replace(/&#39;/gi, \"'\");\n}\n\nreturn items.map(item => {\n  const body = item.json?.body || {};\n  const raw = body.content || '';\n\n  // 1) HTML -> text\n  const plain = decodeEntities(\n    raw\n      .replace(/<style[\\s\\S]*?<\\/style>/gi,' ')\n      .replace(/<script[\\s\\S]*?<\\/script>/gi,' ')\n      .replace(/<!--[\\s\\S]*?-->/g,' ')\n      .replace(/<[^>]+>/g,' ')\n  )\n  .replace(/\\s+/g,' ')\n  .trim();\n\n  // 2) Удаляем типичные «подвалы» (unsubscribe, адреса рассылки)\n  const cleaned = plain\n    .replace(/(odhlásenie|unsubscribe|если не хотите|не хочeте отримувати)[\\s\\S]*$/i, '')\n    .trim();\n\n  // 3) Фолбэк, если письмо пустое\n  const fallback = item.json.bodyPreview || item.json.subject || '';\n  item.json._plainBody = (cleaned || fallback).slice(0, 5000);\n\n  // 4) Метаданные\n  item.json._meta = {\n    id: item.json.id,\n    subject: item.json.subject || '',\n    from: item.json.from?.emailAddress?.address\n          || item.json.sender?.emailAddress?.address\n          || '',\n    to: (item.json.toRecipients || []).map(r => r.emailAddress.address).join(', '),\n    received: item.json.receivedDateTime || '',\n    hasAttachments: !!item.json.hasAttachments,\n    webLink: item.json.webLink || ''\n  };\n\n  return item;\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -44,13 +44,13 @@
         -1520,
         368
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Code in JavaScript"
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Answer ONLY with one JSON code block that matches the provided schema exactly.\nNo text before/after. No arrays. No extra keys.\n\nYou are an email classifier.\n## Task\nClassify the email into topical categories, assign independent priority, suggest a folder, and set notify flag.\n\n## Inputs\nSubject: {{ $json[\"_meta\"][\"subject\"] }}\nFrom: {{ $json[\"_meta\"][\"from\"] }}\nBody: {{ $json[\"_plainBody\"] }}\n\n## Categories (multi-label)\nUniversity, System, Promotions, Personal, Other\n\n## Priority rules\n- \"critical\": urgent ≤24h, university official with deadline, financial transaction/failure, security alert requiring **immediate action** (e.g. account locked, fraudulent charge, forced password reset, payment failure, service suspension).\n- \"high\": important but not critical (e.g. deadlines for exams, contracts, invoices, near-term meeting invites/updates).\n- \"normal\": \n  - routine security notifications (e.g. \"new sign-in detected\", \"unfamiliar device\", \"login attempt\"),\n  - one-time verification codes (OTP, 2FA, login codes, sudo codes, email verification codes),\n  - automatic alerts where the message itself says \"If this was you, no action needed.\"\n- \"low\": junk, promo, newsletters, marketing.\n⚠ Marketing/promotional emails remain \"low\" even if they mention expiry dates or renewal prompts.\n\n## Folder\nMap main label → University, System, Personal, Promotions, Other.\n\n## Notify\ntrue if priority=\"critical\" OR (priority=\"high\" AND any of University, System present).\nElse false.\n\n## Output JSON\n{\n  \"labels\": string[],\n  \"priority\": \"critical\"|\"high\"|\"normal\"|\"low\",\n  \"suggestedFolder\": string,\n  \"summary\": string,\n  \"reasons\": string[],\n  \"confidence\": number,\n  \"notify\": boolean\n}",
+        "text": "=Answer ONLY with one JSON object that matches the provided schema exactly.\nNo text before/after. No markdown. No extra keys.\n\nYou are an email classifier.\n\n## Task\n\nClassify the email into a single topical category, assign priority, suggest a folder, and set notify flag.\n\n## Inputs\n\nSubject: {{ $json[\"_meta\"][\"subject\"] }}\nFrom: {{ $json[\"_meta\"][\"from\"] }}\nBody: {{ $json[\"_plainBody\"] }}\n\n## Categories (choose exactly ONE)\n\nUniversity, System, Promotions, Personal, Other\n\n## Priority rules\n\n* \"critical\": urgent ≤24h, university official with deadline, financial transaction/failure, security alert requiring immediate action (e.g., account locked, fraudulent charge, forced password reset, payment failure, service suspension).\n* \"high\": important but not critical (e.g., deadlines for exams, contracts, invoices, near-term meeting invites/updates).\n* \"normal\":\n\n  * routine security notifications (“new sign-in detected”, “unfamiliar device”, “login attempt”),\n  * one-time verification codes (OTP/2FA/login),\n  * automated alerts that say “If this was you, no action needed.”\n* \"low\": junk, promo, newsletters, marketing.\n  ⚠ Promotional/marketing emails remain \"low\" even if they mention expiry dates or renewal prompts.\n\n## Folder mapping\n\nUse the main label → one of: University, System, Personal, Promotions, Other.\n\n## Notify\n\ntrue if priority=\"critical\" OR (priority=\"high\" AND label in {University, System}). Else false.\n\n## Output JSON\n\n{\n\"label\": string,\n\"priority\": \"critical\"|\"high\"|\"normal\"|\"low\",\n\"suggestedFolder\": string,\n\"summary\": string,\n\"reasons\": string\\[],\n\"confidence\": number,\n\"notify\": boolean\n}",
         "hasOutputParser": true,
         "batching": {}
       },
@@ -60,7 +60,7 @@
         -1344,
         368
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Basic LLM Chain"
     },
     {
@@ -83,12 +83,12 @@
         -1376,
         544
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
-          "id": "${OPENAI_CREDENTIAL_ID}",
-          "name": "OpenAI (demo)"
+          "id": "REDACTED",
+          "name": "OpenAi account"
         }
       }
     },
@@ -112,7 +112,7 @@
                       "type": "string",
                       "operation": "equals"
                     },
-                    "id": "${GUID}"
+                    "id": "REDACTED"
                   }
                 ],
                 "combinator": "and"
@@ -130,7 +130,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "${GUID}",
+                    "id": "REDACTED",
                     "leftValue": "={{ $json.priority || $json.output.priority }}",
                     "rightValue": "normal",
                     "operator": {
@@ -155,7 +155,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "${GUID}",
+                    "id": "REDACTED",
                     "leftValue": "={{ $json.priority || $json.output.priority }}",
                     "rightValue": "high",
                     "operator": {
@@ -180,7 +180,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "${GUID}",
+                    "id": "REDACTED",
                     "leftValue": "={{ $json.priority || $json.output.priority }}",
                     "rightValue": "critical",
                     "operator": {
@@ -205,7 +205,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "${GUID}",
+                    "id": "REDACTED",
                     "leftValue": "=",
                     "rightValue": "",
                     "operator": {
@@ -230,7 +230,7 @@
         -1040,
         96
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Switch (low-critical)"
     },
     {
@@ -241,13 +241,13 @@
         -704,
         -32
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "No Operation, do nothing"
     },
     {
       "parameters": {
-        "chatId": "${TELEGRAM_CHAT_ID}",
-        "text": "=📧 *New Email Received*\n\n👤 *From:* {{$node[\"Microsoft Outlook Trigger\"].json.from.emailAddress.address}}\n📥 *To:* {{$node[\"Microsoft Outlook Trigger\"].json.toRecipients[0].emailAddress.address}}\n📝 *Subject:* {{$node[\"Microsoft Outlook Trigger\"].json.subject}}\n\n🏷️ *Category:* {{$json.output.labels[0]}} ({{Math.round($json.output.confidence*100)}}% sure)\n⚡ *Priority:* {{$json.output.priority}}\n📂 *Suggested Folder:* {{$json.output.suggestedFolder}}\n\n📖 *Summary:*  \n{{$json.output.summary}}\n\n💡 *Why important:*  \n• {{$json.output.reasons[0]}}  \n• {{$json.output.reasons[1]}}  \n• {{$json.output.reasons[2]}}\n\n🔗 [Open email]({{$node[\"Microsoft Outlook Trigger\"].json.webLink}})",
+        "chatId": "REDACTED",
+        "text": "=📧 *New Email Received*\n\n👤 *From:* {{$node[\"Microsoft Outlook Trigger\"].json.from.emailAddress.address}}\n📥 *To:* {{$node[\"Microsoft Outlook Trigger\"].json.toRecipients[0].emailAddress.address}}\n📝 *Subject:* {{$node[\"Microsoft Outlook Trigger\"].json.subject}}\n\n⚡ *Priority:* {{$json.output.priority}}\n📂 *Suggested Folder:* {{$json.output.suggestedFolder}}\n\n📖 *Summary:*  \n{{$json.output.summary}}\n\n💡 *Why important:*  \n• {{$json.output.reasons[0]}}  \n• {{$json.output.reasons[1]}}  \n• {{$json.output.reasons[2]}}\n\n🔗 [Open email]({{$node[\"Microsoft Outlook Trigger\"].json.webLink}})",
         "additionalFields": {
           "appendAttribution": false
         }
@@ -258,19 +258,19 @@
         -704,
         128
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Need to read",
-      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "webhookId": "REDACTED",
       "credentials": {
         "telegramApi": {
-          "id": "${TELEGRAM_CREDENTIAL_ID}",
-          "name": "Telegram (demo)"
+          "id": "REDACTED",
+          "name": "REDACTED"
         }
       }
     },
     {
       "parameters": {
-        "chatId": "${TELEGRAM_CHAT_ID}",
+        "chatId": "REDACTED",
         "text": "The agent did not recognize the letter. We need to figure it out.",
         "additionalFields": {
           "appendAttribution": false
@@ -282,13 +282,13 @@
         -704,
         320
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "AI slop",
-      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "webhookId": "REDACTED",
       "credentials": {
         "telegramApi": {
-          "id": "${TELEGRAM_CREDENTIAL_ID}",
-          "name": "Telegram (demo)"
+          "id": "REDACTED",
+          "name": "REDACTED"
         }
       }
     },
@@ -306,7 +306,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "${GUID}",
+                    "id": "REDACTED",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "Personal",
                     "operator": {
@@ -331,7 +331,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "${GUID}",
+                    "id": "REDACTED",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "Promotions",
                     "operator": {
@@ -356,7 +356,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "${GUID}",
+                    "id": "REDACTED",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "System",
                     "operator": {
@@ -381,7 +381,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "${GUID}",
+                    "id": "REDACTED",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "University",
                     "operator": {
@@ -406,7 +406,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "${GUID}",
+                    "id": "REDACTED",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "Other",
                     "operator": {
@@ -433,7 +433,7 @@
         -1200,
         736
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Switch"
     },
     {
@@ -446,10 +446,10 @@
         },
         "folderId": {
           "__rl": true,
-          "value": "${OUTLOOK_FOLDER_PERSONAL}",
+          "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZcAAAAA==",
           "mode": "list",
           "cachedResultName": "Personal",
-          "cachedResultUrl": "https://example.com/..."
+          "cachedResultUrl": "REDACTED_URL"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -458,13 +458,13 @@
         -848,
         480
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Move a Personal message",
-      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "webhookId": "REDACTED",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "${OUTLOOK_CREDENTIAL_ID}",
-          "name": "Outlook (demo)"
+          "id": "REDACTED",
+          "name": "Outlook REDACTED"
         }
       }
     },
@@ -478,10 +478,10 @@
         },
         "folderId": {
           "__rl": true,
-          "value": "${OUTLOOK_FOLDER_SYSTEM}",
+          "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZbgAAAA==",
           "mode": "list",
           "cachedResultName": "System",
-          "cachedResultUrl": "https://example.com/..."
+          "cachedResultUrl": "REDACTED_URL"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -490,13 +490,13 @@
         -608,
         752
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Move a System message",
-      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "webhookId": "REDACTED",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "${OUTLOOK_CREDENTIAL_ID}",
-          "name": "Outlook (demo)"
+          "id": "REDACTED",
+          "name": "Outlook REDACTED"
         }
       }
     },
@@ -510,10 +510,10 @@
         },
         "folderId": {
           "__rl": true,
-          "value": "${OUTLOOK_FOLDER_UNIVERSITY}",
+          "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZbAAAAA==",
           "mode": "list",
           "cachedResultName": "University",
-          "cachedResultUrl": "https://example.com/..."
+          "cachedResultUrl": "REDACTED_URL"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -522,13 +522,13 @@
         -752,
         864
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Move a University message",
-      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "webhookId": "REDACTED",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "${OUTLOOK_CREDENTIAL_ID}",
-          "name": "Outlook (demo)"
+          "id": "REDACTED",
+          "name": "Outlook REDACTED"
         }
       }
     },
@@ -542,10 +542,10 @@
         },
         "folderId": {
           "__rl": true,
-          "value": "${OUTLOOK_FOLDER_OTHER}",
+          "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZcQAAAA==",
           "mode": "list",
           "cachedResultName": "Other",
-          "cachedResultUrl": "https://example.com/..."
+          "cachedResultUrl": "REDACTED_URL"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -554,13 +554,13 @@
         -800,
         1024
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Move an Other message",
-      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "webhookId": "REDACTED",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "${OUTLOOK_CREDENTIAL_ID}",
-          "name": "Outlook (demo)"
+          "id": "REDACTED",
+          "name": "Outlook REDACTED"
         }
       }
     },
@@ -574,10 +574,10 @@
         },
         "folderId": {
           "__rl": true,
-          "value": "${OUTLOOK_FOLDER_FALLBACK}",
+          "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZdQAAAA==",
           "mode": "list",
           "cachedResultName": "Fallback",
-          "cachedResultUrl": "https://example.com/..."
+          "cachedResultUrl": "REDACTED_URL"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -586,20 +586,20 @@
         -1008,
         1104
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Move a Fallback",
-      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "webhookId": "REDACTED",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "${OUTLOOK_CREDENTIAL_ID}",
-          "name": "Outlook (demo)"
+          "id": "REDACTED",
+          "name": "Outlook REDACTED"
         }
       }
     },
     {
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\"type\":\"object\",\"properties\":{\"output\":{\"type\":\"object\",\"properties\":{\"labels\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"enum\":[\"University\",\"System\",\"Promotions\",\"Personal\",\"Other\"]},\"minItems\":1,\"maxItems\":3},\"priority\":{\"type\":\"string\",\"enum\":[\"critical\",\"high\",\"normal\",\"low\"]},\"suggestedFolder\":{\"type\":\"string\",\"enum\":[\"Clients\",\"University\",\"Finance\",\"System\",\"HR\",\"Logistics\",\"Legal\",\"Personal\",\"Promotions\",\"Other\"]},\"summary\":{\"type\":\"string\",\"maxLength\":240},\"reasons\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"minItems\":1,\"maxItems\":5},\"confidence\":{\"type\":\"number\",\"minimum\":0,\"maximum\":1},\"notify\":{\"type\":\"boolean\"}},\"required\":[\"labels\",\"priority\",\"suggestedFolder\",\"summary\",\"reasons\",\"confidence\",\"notify\"],\"additionalProperties\":false}},\"required\":[\"output\"],\"additionalProperties\":false,\"$schema\":\"http://json-schema.org/draft-07/schema#\"}"
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"output\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"label\": {\n          \"type\": \"string\",\n          \"enum\": [\"University\",\"System\",\"Promotions\",\"Personal\",\"Other\"]\n        },\n        \"priority\": {\n          \"type\": \"string\",\n          \"enum\": [\"critical\",\"high\",\"normal\",\"low\"]\n        },\n        \"suggestedFolder\": {\n          \"type\": \"string\",\n          \"enum\": [\"University\",\"System\",\"Promotions\",\"Personal\",\"Other\"]\n        },\n        \"summary\": { \"type\": \"string\", \"maxLength\": 240 },\n        \"reasons\": {\n          \"type\": \"array\",\n          \"items\": { \"type\": \"string\" },\n          \"minItems\": 1,\n          \"maxItems\": 5\n        },\n        \"confidence\": { \"type\": \"number\", \"minimum\": 0, \"maximum\": 1 },\n        \"notify\": { \"type\": \"boolean\" }\n      },\n      \"required\": [\"label\",\"priority\",\"suggestedFolder\",\"summary\",\"reasons\",\"confidence\",\"notify\"],\n      \"additionalProperties\": false\n    }\n  },\n  \"required\": [\"output\"],\n  \"additionalProperties\": false,\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\"\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
@@ -607,7 +607,7 @@
         -1136,
         544
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Structured Output Parser"
     },
     {
@@ -620,10 +620,10 @@
         },
         "folderId": {
           "__rl": true,
-          "value": "${OUTLOOK_FOLDER_PROMOTIONS}",
+          "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZbwAAAA==",
           "mode": "list",
           "cachedResultName": "Promotions",
-          "cachedResultUrl": "https://example.com/..."
+          "cachedResultUrl": "REDACTED_URL"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -632,13 +632,13 @@
         -704,
         608
       ],
-      "id": "${GUID}",
+      "id": "REDACTED",
       "name": "Move a Promotions message",
-      "webhookId": "${TELEGRAM_WEBHOOK_ID}",
+      "webhookId": "REDACTED",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "${OUTLOOK_CREDENTIAL_ID}",
-          "name": "Outlook (demo)"
+          "id": "REDACTED",
+          "name": "Outlook REDACTED"
         }
       }
     }
@@ -795,13 +795,14 @@
   "active": true,
   "settings": {
     "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "Qxz1zZsVQKpZBT4J"
   },
-  "versionId": "${WORKFLOW_VERSION_ID}",
+  "versionId": "ebdbba67-23f1-4d4b-a190-3e0d79795117",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "${N8N_INSTANCE_ID}"
+    "instanceId": "948bb98238b6d53395d329d73cb0b5fca92bd4e4ef3ef0b2f9b0a213bf0aa583"
   },
-  "id": "aHXcIZ5S0j2jHNgg",
+  "id": "REDACTED",
   "tags": []
 }
