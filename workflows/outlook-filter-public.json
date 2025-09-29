@@ -1,5 +1,5 @@
 {
-  "name": "Outlook filter REDACTED",
+  "name": "Outlook filter (vikt)",
   "nodes": [
     {
       "parameters": {
@@ -25,12 +25,12 @@
         -1728,
         368
       ],
-      "id": "REDACTED",
+      "id": "86ca6712-99c0-4b41-9981-61124d8396b1",
       "name": "Microsoft Outlook Trigger",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Outlook REDACTED"
+          "id": "REPLACE_CREDENTIAL_ID_microsoftOutlookOAuth2Api",
+          "name": "REPLACE_CREDENTIAL_NAME_microsoftOutlookOAuth2Api"
         }
       }
     },
@@ -44,13 +44,13 @@
         -1520,
         368
       ],
-      "id": "REDACTED",
+      "id": "e64db490-a5ed-4629-8acb-96f5e3484f34",
       "name": "Code in JavaScript"
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Answer ONLY with one JSON object that matches the provided schema exactly.\nNo text before/after. No markdown. No extra keys.\n\nYou are an email classifier.\n\n## Task\n\nClassify the email into a single topical category, assign priority, suggest a folder, and set notify flag.\n\n## Inputs\n\nSubject: {{ $json[\"_meta\"][\"subject\"] }}\nFrom: {{ $json[\"_meta\"][\"from\"] }}\nBody: {{ $json[\"_plainBody\"] }}\n\n## Categories (choose exactly ONE)\n\nUniversity, System, Promotions, Personal, Other\n\n## Priority rules\n\n* \"critical\": urgent ≤24h, university official with deadline, financial transaction/failure, security alert requiring immediate action (e.g., account locked, fraudulent charge, forced password reset, payment failure, service suspension).\n* \"high\": important but not critical (e.g., deadlines for exams, contracts, invoices, near-term meeting invites/updates).\n* \"normal\":\n\n  * routine security notifications (“new sign-in detected”, “unfamiliar device”, “login attempt”),\n  * one-time verification codes (OTP/2FA/login),\n  * automated alerts that say “If this was you, no action needed.”\n* \"low\": junk, promo, newsletters, marketing.\n  ⚠ Promotional/marketing emails remain \"low\" even if they mention expiry dates or renewal prompts.\n\n## Folder mapping\n\nUse the main label → one of: University, System, Personal, Promotions, Other.\n\n## Notify\n\ntrue if priority=\"critical\" OR (priority=\"high\" AND label in {University, System}). Else false.\n\n## Output JSON\n\n{\n\"label\": string,\n\"priority\": \"critical\"|\"high\"|\"normal\"|\"low\",\n\"suggestedFolder\": string,\n\"summary\": string,\n\"reasons\": string\\[],\n\"confidence\": number,\n\"notify\": boolean\n}",
+        "text": "=Answer ONLY with one JSON object that matches the schema.\nNo text before/after. No markdown. No extra keys.\n\nTask\nClassify the email into a single category, assign priority, suggest a folder, and set notify flag.\n\nInputs\nSubject: {{ $json[\"_meta\"][\"subject\"] }}\nFrom: {{ $json[\"_meta\"][\"from\"] }}\nBody: {{ $json[\"_plainBody\"] }}\n\nCategories (choose exactly ONE)\nUniversity, System, Promotions, Personal, Other\n\nPriority rules\n* \"critical\": urgent ≤24h, university official with deadline, financial transaction/failure, security alert requiring immediate action (e.g., account locked, fraudulent charge, forced password reset, payment failure, service suspension).\n* \"high\": important but not critical (e.g., deadlines for exams, contracts, invoices, near-term meeting invites/updates).\n* \"normal\":\n  * routine security notifications (“new sign-in detected”, “unfamiliar device”, “login attempt”),\n  * one-time verification codes (OTP/2FA/login),\n  * automated alerts that say “If this was you, no action needed.”\n* \"low\": junk, promo, newsletters, marketing.\n  ⚠ Promotional/marketing emails remain \"low\" even if they mention expiry dates or renewal prompts.\n\nFolder mapping\nChoose one of: University, System, Personal, Promotions, Other.\n\nNotify\ntrue if priority=\"critical\" OR (priority=\"high\" AND label in {University, System}). Else false.\n\nConstraints\n- Output must match the schema exactly.\n- Use ONE label only.\n- Keep summary ≤ 200 characters.",
         "hasOutputParser": true,
         "batching": {}
       },
@@ -60,7 +60,7 @@
         -1344,
         368
       ],
-      "id": "REDACTED",
+      "id": "f8e14098-68b4-4b88-989f-fce134c32131",
       "name": "Basic LLM Chain"
     },
     {
@@ -83,12 +83,12 @@
         -1376,
         544
       ],
-      "id": "REDACTED",
+      "id": "04c54206-6e3c-42a2-93ae-f998ddeefcc4",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
-          "id": "REDACTED",
-          "name": "OpenAi account"
+          "id": "REPLACE_CREDENTIAL_ID_openAiApi",
+          "name": "REPLACE_CREDENTIAL_NAME_openAiApi"
         }
       }
     },
@@ -112,13 +112,13 @@
                       "type": "string",
                       "operation": "equals"
                     },
-                    "id": "REDACTED"
+                    "id": "717c8a6f-a806-4617-8547-d684b9a3cfa3"
                   }
                 ],
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "low"
+              "outputKey": "REDACTED"
             },
             {
               "conditions": {
@@ -130,7 +130,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "REDACTED",
+                    "id": "3f949b26-a8fc-41f7-95c8-20b66c73d10f",
                     "leftValue": "={{ $json.priority || $json.output.priority }}",
                     "rightValue": "normal",
                     "operator": {
@@ -143,7 +143,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "normal"
+              "outputKey": "REDACTED"
             },
             {
               "conditions": {
@@ -155,7 +155,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "REDACTED",
+                    "id": "00514208-3984-48b8-898a-8bd4d9fe907d",
                     "leftValue": "={{ $json.priority || $json.output.priority }}",
                     "rightValue": "high",
                     "operator": {
@@ -168,7 +168,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "high"
+              "outputKey": "REDACTED"
             },
             {
               "conditions": {
@@ -180,7 +180,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "REDACTED",
+                    "id": "0d6cb614-1a71-4a7b-80dd-a6ca02e7bdb3",
                     "leftValue": "={{ $json.priority || $json.output.priority }}",
                     "rightValue": "critical",
                     "operator": {
@@ -193,7 +193,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "critical"
+              "outputKey": "REDACTED"
             },
             {
               "conditions": {
@@ -205,7 +205,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "REDACTED",
+                    "id": "b976386a-0799-46b9-b873-d1da3ed3d76b",
                     "leftValue": "=",
                     "rightValue": "",
                     "operator": {
@@ -230,7 +230,7 @@
         -1040,
         96
       ],
-      "id": "REDACTED",
+      "id": "032a170f-ec18-491c-8d58-c6da732e43fd",
       "name": "Switch (low-critical)"
     },
     {
@@ -241,12 +241,12 @@
         -704,
         -32
       ],
-      "id": "REDACTED",
+      "id": "0eda02e7-3206-4104-8694-af1b02c46780",
       "name": "No Operation, do nothing"
     },
     {
       "parameters": {
-        "chatId": "REDACTED",
+        "chatId": "REPLACE_CHAT_ID",
         "text": "=📧 *New Email Received*\n\n👤 *From:* {{$node[\"Microsoft Outlook Trigger\"].json.from.emailAddress.address}}\n📥 *To:* {{$node[\"Microsoft Outlook Trigger\"].json.toRecipients[0].emailAddress.address}}\n📝 *Subject:* {{$node[\"Microsoft Outlook Trigger\"].json.subject}}\n\n⚡ *Priority:* {{$json.output.priority}}\n📂 *Suggested Folder:* {{$json.output.suggestedFolder}}\n\n📖 *Summary:*  \n{{$json.output.summary}}\n\n💡 *Why important:*  \n• {{$json.output.reasons[0]}}  \n• {{$json.output.reasons[1]}}  \n• {{$json.output.reasons[2]}}\n\n🔗 [Open email]({{$node[\"Microsoft Outlook Trigger\"].json.webLink}})",
         "additionalFields": {
           "appendAttribution": false
@@ -258,19 +258,19 @@
         -704,
         128
       ],
-      "id": "REDACTED",
+      "id": "83fe9258-0eb3-4cc4-b885-c3d7ecb60807",
       "name": "Need to read",
-      "webhookId": "REDACTED",
+      "webhookId": "dae25f51-fc9c-4463-bd06-b4da8cda87dc",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED",
-          "name": "REDACTED"
+          "id": "REPLACE_CREDENTIAL_ID_telegramApi",
+          "name": "REPLACE_CREDENTIAL_NAME_telegramApi"
         }
       }
     },
     {
       "parameters": {
-        "chatId": "REDACTED",
+        "chatId": "REPLACE_CHAT_ID",
         "text": "The agent did not recognize the letter. We need to figure it out.",
         "additionalFields": {
           "appendAttribution": false
@@ -282,13 +282,13 @@
         -704,
         320
       ],
-      "id": "REDACTED",
+      "id": "7ed7a4e8-198f-4cb0-ac30-2f0e90d6a115",
       "name": "AI slop",
-      "webhookId": "REDACTED",
+      "webhookId": "beea3b99-5408-45f0-bff9-e22a4e10f9a2",
       "credentials": {
         "telegramApi": {
-          "id": "REDACTED",
-          "name": "REDACTED"
+          "id": "REPLACE_CREDENTIAL_ID_telegramApi",
+          "name": "REPLACE_CREDENTIAL_NAME_telegramApi"
         }
       }
     },
@@ -306,7 +306,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "REDACTED",
+                    "id": "d81cf4bb-da91-4dbb-a711-24f4b056de54",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "Personal",
                     "operator": {
@@ -319,7 +319,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "Personal"
+              "outputKey": "REDACTED"
             },
             {
               "conditions": {
@@ -331,7 +331,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "REDACTED",
+                    "id": "b944f583-e894-4aef-b22a-51cf19a48011",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "Promotions",
                     "operator": {
@@ -344,7 +344,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "Promotions"
+              "outputKey": "REDACTED"
             },
             {
               "conditions": {
@@ -356,7 +356,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "REDACTED",
+                    "id": "1c817a4a-7958-4e81-bb70-9c791bd9e59c",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "System",
                     "operator": {
@@ -369,7 +369,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "System"
+              "outputKey": "REDACTED"
             },
             {
               "conditions": {
@@ -381,7 +381,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "REDACTED",
+                    "id": "0fba0d77-4b17-4182-9fbb-9f1a3487c915",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "University",
                     "operator": {
@@ -394,7 +394,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "University"
+              "outputKey": "REDACTED"
             },
             {
               "conditions": {
@@ -406,7 +406,7 @@
                 },
                 "conditions": [
                   {
-                    "id": "REDACTED",
+                    "id": "97368ce2-55a0-4151-9e96-58aec16d2b89",
                     "leftValue": "={{ $json.output.suggestedFolder }}",
                     "rightValue": "Other",
                     "operator": {
@@ -419,7 +419,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "Other"
+              "outputKey": "REDACTED"
             }
           ]
         },
@@ -433,7 +433,7 @@
         -1200,
         736
       ],
-      "id": "REDACTED",
+      "id": "773caf19-aa80-461a-b62c-720cda129942",
       "name": "Switch"
     },
     {
@@ -449,7 +449,7 @@
           "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZcAAAAA==",
           "mode": "list",
           "cachedResultName": "Personal",
-          "cachedResultUrl": "REDACTED_URL"
+          "cachedResultUrl": "https://example.com"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -458,13 +458,13 @@
         -848,
         480
       ],
-      "id": "REDACTED",
+      "id": "258cdc88-f9bf-4373-8a4b-31a6eaaafb79",
       "name": "Move a Personal message",
-      "webhookId": "REDACTED",
+      "webhookId": "a87c68f4-a8ad-4048-945b-4694468586ed",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Outlook REDACTED"
+          "id": "REPLACE_CREDENTIAL_ID_microsoftOutlookOAuth2Api",
+          "name": "REPLACE_CREDENTIAL_NAME_microsoftOutlookOAuth2Api"
         }
       }
     },
@@ -481,7 +481,7 @@
           "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZbgAAAA==",
           "mode": "list",
           "cachedResultName": "System",
-          "cachedResultUrl": "REDACTED_URL"
+          "cachedResultUrl": "https://example.com"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -490,13 +490,13 @@
         -608,
         752
       ],
-      "id": "REDACTED",
+      "id": "85133db0-fef1-4116-9247-394384ca842a",
       "name": "Move a System message",
-      "webhookId": "REDACTED",
+      "webhookId": "a87c68f4-a8ad-4048-945b-4694468586ed",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Outlook REDACTED"
+          "id": "REPLACE_CREDENTIAL_ID_microsoftOutlookOAuth2Api",
+          "name": "REPLACE_CREDENTIAL_NAME_microsoftOutlookOAuth2Api"
         }
       }
     },
@@ -513,7 +513,7 @@
           "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZbAAAAA==",
           "mode": "list",
           "cachedResultName": "University",
-          "cachedResultUrl": "REDACTED_URL"
+          "cachedResultUrl": "https://example.com"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -522,13 +522,13 @@
         -752,
         864
       ],
-      "id": "REDACTED",
+      "id": "2f4ae94a-052e-488d-a6b1-1f59ca4cc57b",
       "name": "Move a University message",
-      "webhookId": "REDACTED",
+      "webhookId": "a87c68f4-a8ad-4048-945b-4694468586ed",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Outlook REDACTED"
+          "id": "REPLACE_CREDENTIAL_ID_microsoftOutlookOAuth2Api",
+          "name": "REPLACE_CREDENTIAL_NAME_microsoftOutlookOAuth2Api"
         }
       }
     },
@@ -545,7 +545,7 @@
           "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZcQAAAA==",
           "mode": "list",
           "cachedResultName": "Other",
-          "cachedResultUrl": "REDACTED_URL"
+          "cachedResultUrl": "https://example.com"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -554,13 +554,13 @@
         -800,
         1024
       ],
-      "id": "REDACTED",
+      "id": "add376ec-0bc2-4f16-a18a-fa300a588576",
       "name": "Move an Other message",
-      "webhookId": "REDACTED",
+      "webhookId": "a87c68f4-a8ad-4048-945b-4694468586ed",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Outlook REDACTED"
+          "id": "REPLACE_CREDENTIAL_ID_microsoftOutlookOAuth2Api",
+          "name": "REPLACE_CREDENTIAL_NAME_microsoftOutlookOAuth2Api"
         }
       }
     },
@@ -577,7 +577,7 @@
           "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZdQAAAA==",
           "mode": "list",
           "cachedResultName": "Fallback",
-          "cachedResultUrl": "REDACTED_URL"
+          "cachedResultUrl": "https://example.com"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -586,20 +586,20 @@
         -1008,
         1104
       ],
-      "id": "REDACTED",
+      "id": "5e8ae428-2e3e-4462-8043-3aac6d2c4a13",
       "name": "Move a Fallback",
-      "webhookId": "REDACTED",
+      "webhookId": "a87c68f4-a8ad-4048-945b-4694468586ed",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Outlook REDACTED"
+          "id": "REPLACE_CREDENTIAL_ID_microsoftOutlookOAuth2Api",
+          "name": "REPLACE_CREDENTIAL_NAME_microsoftOutlookOAuth2Api"
         }
       }
     },
     {
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"output\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"label\": {\n          \"type\": \"string\",\n          \"enum\": [\"University\",\"System\",\"Promotions\",\"Personal\",\"Other\"]\n        },\n        \"priority\": {\n          \"type\": \"string\",\n          \"enum\": [\"critical\",\"high\",\"normal\",\"low\"]\n        },\n        \"suggestedFolder\": {\n          \"type\": \"string\",\n          \"enum\": [\"University\",\"System\",\"Promotions\",\"Personal\",\"Other\"]\n        },\n        \"summary\": { \"type\": \"string\", \"maxLength\": 240 },\n        \"reasons\": {\n          \"type\": \"array\",\n          \"items\": { \"type\": \"string\" },\n          \"minItems\": 1,\n          \"maxItems\": 5\n        },\n        \"confidence\": { \"type\": \"number\", \"minimum\": 0, \"maximum\": 1 },\n        \"notify\": { \"type\": \"boolean\" }\n      },\n      \"required\": [\"label\",\"priority\",\"suggestedFolder\",\"summary\",\"reasons\",\"confidence\",\"notify\"],\n      \"additionalProperties\": false\n    }\n  },\n  \"required\": [\"output\"],\n  \"additionalProperties\": false,\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\"\n}"
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"output\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"label\": { \"type\": \"string\", \"enum\": [\"University\",\"System\",\"Promotions\",\"Personal\",\"Other\"] },\n        \"priority\": { \"type\": \"string\", \"enum\": [\"critical\",\"high\",\"normal\",\"low\"] },\n        \"suggestedFolder\": { \"type\": \"string\", \"enum\": [\"University\",\"System\",\"Promotions\",\"Personal\",\"Other\"] },\n        \"summary\": { \"type\": \"string\", \"maxLength\": 240 },\n        \"reasons\": { \"type\": \"array\", \"items\": { \"type\": \"string\" }, \"minItems\": 1, \"maxItems\": 5 },\n        \"confidence\": { \"type\": \"number\", \"minimum\": 0, \"maximum\": 1 },\n        \"notify\": { \"type\": \"boolean\" }\n      },\n      \"required\": [\"label\",\"priority\",\"suggestedFolder\",\"summary\",\"reasons\",\"confidence\",\"notify\"],\n      \"additionalProperties\": false\n    }\n  },\n  \"required\": [\"output\"],\n  \"additionalProperties\": false,\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\"\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
@@ -607,7 +607,7 @@
         -1136,
         544
       ],
-      "id": "REDACTED",
+      "id": "4abd5fad-2317-4398-b0d6-cfa820e962a0",
       "name": "Structured Output Parser"
     },
     {
@@ -623,7 +623,7 @@
           "value": "AQMkADkyNGJmZTQ2LWNmYjAtNGU5YS1iNmQ3LTZiYTRkYmZjNDg1NgAuAAADc-o4pQHhU0uGF2-rY2SAZQEANMwRC6RQVEWTciFNz3OZAwABHm8ZbwAAAA==",
           "mode": "list",
           "cachedResultName": "Promotions",
-          "cachedResultUrl": "REDACTED_URL"
+          "cachedResultUrl": "https://example.com"
         }
       },
       "type": "n8n-nodes-base.microsoftOutlook",
@@ -632,13 +632,13 @@
         -704,
         608
       ],
-      "id": "REDACTED",
+      "id": "6c5684b7-0da1-4eb2-af32-ea48d4859cb8",
       "name": "Move a Promotions message",
-      "webhookId": "REDACTED",
+      "webhookId": "a87c68f4-a8ad-4048-945b-4694468586ed",
       "credentials": {
         "microsoftOutlookOAuth2Api": {
-          "id": "REDACTED",
-          "name": "Outlook REDACTED"
+          "id": "REPLACE_CREDENTIAL_ID_microsoftOutlookOAuth2Api",
+          "name": "REPLACE_CREDENTIAL_NAME_microsoftOutlookOAuth2Api"
         }
       }
     }
@@ -798,11 +798,11 @@
     "callerPolicy": "workflowsFromSameOwner",
     "errorWorkflow": "Qxz1zZsVQKpZBT4J"
   },
-  "versionId": "ebdbba67-23f1-4d4b-a190-3e0d79795117",
+  "versionId": "a5ff8d6c-13bd-42ce-9079-fe270289fe62",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "948bb98238b6d53395d329d73cb0b5fca92bd4e4ef3ef0b2f9b0a213bf0aa583"
   },
-  "id": "REDACTED",
+  "id": "aHXcIZ5S0j2jHNgg",
   "tags": []
 }
